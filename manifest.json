@@ -1,0 +1,55 @@
+{
+    "name": "Turtl",
+    "id": "turtl",
+    "packaging_format": 1,
+    "description": {
+        "en": "Turtl lets you take notes, bookmark websites, and store documents for sensitive projects. From sharing passwords with your coworkers to tracking research on an article you're writing, Turtl keeps it all safe from everyone but you and those you share with.",
+        "fr": "Turtl vous permet de prendre des notes, de mettre en marque-page des adresses Web et de stocker des documents pour des projets sensibles. Du partage de mots de passe avec vos collègues au suivi des recherches pour un article que vous écrivez, Turtl empêche quiconque d'y accéder, sauf vous et ceux que vous partagez."
+    },
+    "url": "https://turtlapp.com/",
+    "license": "MIT",
+    "maintainer": {
+        "name": "Luc Didry",
+        "email": "luc@framasoft.org",
+        "url": "https://framasoft.org"
+    },
+    "requirements": {
+        "yunohost": ">> 2.4.0"
+    },
+    "multi_instance": false,
+    "services": [
+        "turtl"
+    ],
+    "arguments": {
+        "install" : [
+            {
+                "name": "domain",
+                "type": "domain",
+                "ask": {
+                    "en": "Choose a domain for your turtl server",
+                    "fr": "Choisissez un domaine pour votre serveur turtl"
+                },
+                "example": "domain.org"
+            },
+            {
+                "name": "path",
+                "type": "path",
+                "ask": {
+                    "en": "Choose a path for Turtl",
+                    "fr": "Choisissez un chemin pour Turtl"
+                },
+                "example": "/turtl",
+                "default": "/"
+            },
+            {
+                "name": "is_public",
+                "type": "boolean",
+                "ask": {
+                    "en": "Is it a public server? (should we announce it?)",
+                    "fr": "Est-ce un serveur public ? (devons-nous l'annoncer ?)"
+                },
+                "default": false
+            }
+        ]
+    }
+}

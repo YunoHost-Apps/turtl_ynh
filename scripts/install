@@ -1,0 +1,181 @@
+#!/bin/bash
+
+#=================================================
+# IMPORT GENERIC HELPERS
+#=================================================
+
+source _common.sh
+source /usr/share/yunohost/helpers
+
+#=================================================
+# MANAGE FAILURE OF THE SCRIPT
+#=================================================
+
+ynh_abort_if_errors	# Active trap pour arrêter le script si une erreur est détectée.
+
+#=================================================
+# RETRIEVE ARGUMENTS FROM THE MANIFEST
+#=================================================
+
+app=$YNH_APP_INSTANCE_NAME
+domain=$YNH_APP_ARG_DOMAIN
+path=$YNH_APP_ARG_PATH
+is_public=$YNH_APP_ARG_IS_PUBLIC
+
+#=================================================
+# CHECK THE DEBIAN'S CODENAME
+#=================================================
+
+codename=$(lsb_release -a 2>/dev/null | grep Codename | cut -f 2)
+test -z "$codename" && (ynh_die "codename empty")
+if [ $codename != 'jessie' ]
+then
+    ynh_die "Sorry, it can only be installed on Debian Jessie"
+fi
+archi=$(uname -m)
+pwd=$(pwd)
+
+#=================================================
+# FIND AND OPEN A PORT
+#=================================================
+
+port=$(ynh_find_port 8181)	# Cherche un port libre.
+ynh_app_setting_set $app port $port
+
+# Store infos in YunoHost config
+ynh_app_setting_set $app domain ${domain}
+ynh_app_setting_set $app path ${path}
+ynh_app_setting_set $app is_public ${is_public}
+
+#=================================================
+# DEPENDENCIES
+#=================================================
+# Install Clozure Common Lisp
+cd /opt
+if [ $archi == "armv7l" ]
+then
+    wget -q ftp://ftp.clozure.com/pub/release/1.11/ccl-1.11-linuxarm.tar.gz
+    tar xf ccl-1.11-linuxarm.tar.gz
+else
+    wget -q ftp://ftp.clozure.com/pub/release/1.11/ccl-1.11-linuxx86.tar.gz
+    tar xf ccl-1.11-linuxx86.tar.gz
+fi
+
+cd ccl
+if [ $(grep -c "flags.* lm .*" /proc/cpuinfo) -eq 0 ]
+then
+    cp scripts/ccl /usr/bin/ccl
+else
+    cp scripts/ccl64 /usr/bin/ccl
+fi
+sed -e "s@CCL_DEFAULT_DIRECTORY=/usr/local/src/ccl@CCL_DEFAULT_DIRECTORY=/opt/ccl@" -i /usr/bin/ccl
+
+# Install some dependencies
+cd $pwd
+sudo cp -a ../conf/turtl.list /etc/apt/sources.list.d/
+if [ $archi == "armv7l" ]
+then
+    gpg --keyserver pgpkeys.mit.edu --recv-key 7638D0442B90D010
+    gpg -a --export 7638D0442B90D010 | sudo apt-key add -
+fi
+sudo apt-get update
+sudo apt-get -qq -y install build-essential
+sudo apt-get -qq -t jessie-backports -y install libuv1-dev
+
+# Install QuickLisp
+sudo cp -a ../conf/ccl-init.lisp ~www-data/.ccl-init.lisp
+mkdir ~www-data/quicklisp ~www-data/.cache/
+chown www-data: ~www-data/quicklisp ~www-data/.cache/ ~www-data/.ccl-init.lisp
+
+wget -q https://beta.quicklisp.org/quicklisp.lisp     -O /tmp/quicklisp.lisp
+wget -q https://beta.quicklisp.org/quicklisp.lisp.asc -O /tmp/quicklisp.lisp.asc
+gpg --keyserver pgpkeys.mit.edu --recv-key 307965AB028B5FF7
+gpg --verify /tmp/quicklisp.lisp.asc /tmp/quicklisp.lisp
+
+su -c 'echo -e "(quicklisp-quickstart:install)\n(quit)" | ccl --load /tmp/quicklisp.lisp' -s /bin/bash www-data
+
+echo "(pushnew \"./\" asdf :*central-registry* :test #'equal)" >> ~www-data/.ccl-init.lisp
+
+rm -f /tmp/quicklisp /tmp/quicklisp.lisp.asc
+
+# Install RethinkDB
+if [ $archi == "armv7l" ]
+then
+    sudo dpkg -i ../conf/rethinkdb_2.3.6_armhf.deb
+else
+    release=$(lsb_release -cs)
+    echo "deb http://download.rethinkdb.com/apt $release main" | sudo tee /etc/apt/sources.list.d/rethinkdb.list
+    wget -qO- https://download.rethinkdb.com/apt/pubkey.gpg | sudo apt-key add -
+    sudo apt-get update
+    sudo apt-get -qq -y install rethinkdb
+fi
+
+echo "http-port=8091" > /etc/rethinkdb/instances.d/turtl.conf
+service rethinkdb restart
+
+# Install RethinkDB tools (needed for backup)
+apt-get install python-pip
+pip install rethinkdb
+
+# Install Turtl
+cd /var/www
+mkdir turtl/data -p
+cd turtl
+git clone https://github.com/turtl/api.git
+
+#=================================================
+# CONFIGURE TURTL
+#=================================================
+cd api
+
+# Copions le modèle de fichier de configuration
+cp config/config.default.lisp config/config.lisp
+
+# Modifie la configuration de turtl
+sed -e "s@\*server-port\* 8181@*server-port* $port@" \
+    -e "s@\*server-bind\* nil@*server-bind* \"127.0.0.1\"@" \
+    -e "s@\*production-error-handling\* nil@*production-error-handling* t@" \
+    -e "s@\*site-url\* \"http://turtl.dev:8181\"@*site-url* \"https://$domain\"@" \
+    -e "s@\*smtp-host\* nil@*smtp-host* \"localhost\"@" \
+    -e "s@\*display-errors\* t@*display-errors* nil@" \
+    -e "s@\*local-upload\* nil@*local-upload* \"/var/www/turtl/data\"@" \
+    -e "s@\*local-upload-url\* nil@*local-upload-url* \"https://$domain\"@" \
+    -i config/config.lisp
+
+if [ $path != '/' ]
+then
+    sed -e "s@\*api-path\* \"\"@\*api-path\* \"$path\"@" -i config/config.lisp
+fi
+
+ynh_store_checksum_config "config/config.lisp"  # Enregistre la somme de contrôle du fichier de config
+
+#=================================================
+# LOG HANDLING
+#=================================================
+cd $pwd
+sudo cp ../conf/rsyslogd.conf /etc/rsyslog.d/turtl.conf
+sudo service rsyslog restart
+sudo cp ../conf/logrotate.conf /etc/logrotate.d/turtl
+
+#=================================================
+# ENABLE SERVICE IN ADMIN PANEL
+#=================================================
+# Add service to Yunohost monitoring
+sudo yunohost service add turtl --log "/var/log/turtl/turtl.log"
+
+#=================================================
+# NGINX
+#=================================================
+# Copy Nginx conf
+sudo cp ../conf/nginx.conf /etc/nginx/conf.d/$domain.d/$app.conf
+
+# Change variables in Nginx configuration
+if [ $is_public -eq 1 ];
+then
+    ynh_app_setting_set "$app" unprotected_uris "$path"
+fi
+sudo sed -i "s@__PATH__@$path@g" /etc/nginx/conf.d/$domain.d/$app.conf
+sudo sed -i "s@__PORT__@$port@g" /etc/nginx/conf.d/$domain.d/$app.conf
+
+# Reload Nginy
+sudo service nginx reload

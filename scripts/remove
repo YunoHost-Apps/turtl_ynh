@@ -1,0 +1,60 @@
+#!/bin/bash
+
+#=================================================
+# GENERIC STARTING
+#=================================================
+# IMPORT GENERIC HELPERS
+#=================================================
+
+source _common.sh
+source /usr/share/yunohost/helpers
+
+#=================================================
+# LOAD SETTINGS
+#=================================================
+
+app=$YNH_APP_INSTANCE_NAME
+
+domain=$(ynh_app_setting_get "$app" domain)
+
+#=================================================
+# STANDARD REMOVE
+#=================================================
+# DISABLE SERVICE IN ADMIN PANEL
+#=================================================
+
+# Retire le service du monitoring de Yunohost.
+if sudo yunohost service status | grep -q turtl	# Test l'existence du service dans Yunohost
+then
+	echo "Remove turtl service"
+	sudo yunohost service remove turtl
+fi
+
+#=================================================
+# SPECIFIC REMOVE
+#=================================================
+# REMOVE TURTL
+#=================================================
+# Remove sources
+sudo rm -rf "/var/www/$app/"
+# Remove dependencies
+sudo pip uninstall rethinkdb -y
+ynh_secure_remove "/etc/rethinkdb/instances.d/turtl.conf"
+sudo rm -rf "/var/lib/rethinkdb/turtl"
+ynh_package_remove libuv1-dev rethinkdb
+sudo rm -rf "/var/lib/rethinkdb/turtl"
+sudo rm -rf "/var/www/.cache/"
+sudo rm -rf "/var/www/quicklisp/"
+sudo rm -rf "/opt/ccl/"
+ynh_secure_remove "/var/www/.ccl-init.lisp"
+ynh_secure_remove "/usr/bin/ccl"
+ynh_secure_remove "/etc/logrotate.d/turtl"
+ynh_secure_remove "/etc/rsyslog.d/turtl.conf"
+sudo service rsyslog restart
+# Remove source.list
+ynh_secure_remove "/etc/apt/sources.list.d/turtl.list"
+# Remove nginx configuration file
+ynh_secure_remove "/etc/nginx/conf.d/$domain.d/$app.conf"
+
+# Reload nginx service
+sudo service nginx reload
