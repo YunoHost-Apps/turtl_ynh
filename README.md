@@ -15,7 +15,7 @@
 - [ ] restore script
 - [ ] check_process
 
-===
+------------------------------
 
 Turtl lets you take notes, bookmark websites, and store documents for sensitive projects.
 From sharing passwords with your coworkers to tracking research on an article you're writing, Turtl keeps it all safe from everyone but you and those you share with.
