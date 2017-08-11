@@ -3,9 +3,17 @@
 - [Yunohost project](https://yunohost.org)
 - [Turtl website](https://turtlapp.com/)
 
-![alt text](https://avatars1.githubusercontent.com/u/5256479?v=4&s=200 "Turtl logo") Turtl.
+![Turtl logo](https://avatars1.githubusercontent.com/u/5256479?v=4&s=200 "Turtl logo").
 
 **WARNING**: this is a work in progress, test it at your own risks!
+
+## Todo
+
+- [ ] test on x86 (only tested on arm for now)
+- [ ] upgrade script
+- [ ] backup script
+- [ ] restore script
+- [ ] check_process
 
 ===
 
