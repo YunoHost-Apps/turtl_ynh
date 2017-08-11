@@ -412,7 +412,7 @@ ynh_make_valid_dbid () {
 ynh_exit_properly () {
 	exit_code=$?
 	if [ "$exit_code" -eq 0 ]; then
-			exit 0	# Exit without error if the script ended correctly
+			ynh_die "" 0	# Exit without error if the script ended correctly
 	fi
 
 	trap '' EXIT	# Ignore new exit signals

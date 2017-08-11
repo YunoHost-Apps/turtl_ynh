@@ -17,7 +17,13 @@
 
 ------------------------------
 
+## What's Turtl
+
 Turtl lets you take notes, bookmark websites, and store documents for sensitive projects.
 From sharing passwords with your coworkers to tracking research on an article you're writing, Turtl keeps it all safe from everyone but you and those you share with.
 
 You will need apps to use Turtl. Get them from <https://turtlapp.com/download/>.
+
+## Nota bene
+
+The `rethinkdb_2.3.6_armhf.deb` debian package in `conf` directory of this repository is a cross-compiled RethinkDB package for ARM architecture since no ARM package is provided by RethinkDB.
