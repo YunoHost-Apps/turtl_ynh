@@ -161,7 +161,10 @@ sudo cp ../conf/logrotate.conf /etc/logrotate.d/turtl
 # ENABLE SERVICE IN ADMIN PANEL
 #=================================================
 # Add service to Yunohost monitoring
+sudo cp ../conf/turtl.service /etc/systemd/system/
+sudo systemctl daemon-reload
 sudo yunohost service add turtl --log "/var/log/turtl/turtl.log"
+sudo yunohost service start turtl
 
 #=================================================
 # NGINX

@@ -27,6 +27,10 @@ domain=$(ynh_app_setting_get "$app" domain)
 if sudo yunohost service status | grep -q turtl	# Test l'existence du service dans Yunohost
 then
 	echo "Remove turtl service"
+	sudo systemctl stop turtl
+	sudo systemctl disable turtl
+	ynh_package_remove "/etc/systemd/system/turtl.service"
+	sudo systemctl daemon-reload
 	sudo yunohost service remove turtl
 fi
 
