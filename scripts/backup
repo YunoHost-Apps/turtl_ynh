@@ -1,0 +1,101 @@
+#!/bin/bash
+# Exit on command errors and treat unset variables as an error
+set -eu
+
+#=================================================
+# GENERIC STARTING
+#=================================================
+
+#=================================================
+# IMPORT GENERIC HELPERS
+#=================================================
+
+if [ ! -e _common.sh ]; then
+    # Get the functions file if not present in the current directory
+    sudo cp ../settings/scripts/_common.sh ./_common.sh
+    sudo chmod a+rx _common.sh
+fi
+source _common.sh
+source /usr/share/yunohost/helpers
+
+#=================================================
+# LOAD SETTINGS
+#=================================================
+
+app=$YNH_APP_INSTANCE_NAME
+
+port=$(ynh_app_setting_get $app port)
+domain=$(ynh_app_setting_get $app domain)
+is_public=$(ynh_app_setting_get $app is_public)
+
+wwwhome=~wwwdata
+final_path="$wwwhome/$app"
+#=================================================
+# STANDARD BACKUP STEPS
+#=================================================
+# BACKUP OF THE BDD AND ITS CONFIGURATION
+#=================================================
+
+# Backup the configuration
+CHECK_SIZE "/etc/rethinkdb/instances.d/turtl.conf"
+ynh_backup "/etc/rethinkdb/instances.d/turtl.conf"
+
+# Dump data
+/usr/local/bin/rethinkdb dump -q --overwrite-file -f "$final_path/rethinkdb_dump.tar.gz"
+
+#=================================================
+# BACKUP OF THE MAIN DIR OF THE APP
+#=================================================
+CHECK_SIZE "$final_path"
+ynh_backup "$final_path"
+
+#=================================================
+# BACKUP OF THE SYSTEMD SERVICE
+#=================================================
+CHECK_SIZE "/etc/systemd/system/$app.service"
+ynh_backup "/etc/systemd/system/$app.service"
+
+#=================================================
+# BACKUP OF THE NGINX CONFIGURATION
+#=================================================
+CHECK_SIZE "/etc/nginx/conf.d/$domain.d/$app.conf"
+ynh_backup "/etc/nginx/conf.d/$domain.d/$app.conf"
+
+#=================================================
+# SPECIFIC BACKUP
+#=================================================
+# BACKUP OF APT PREFERENCES AND SOURCES.LIST
+#=================================================
+CHECK_SIZE "/etc/apt/sources.list.d/$app.list"
+ynh_backup "/etc/apt/sources.list.d/$app.list"
+
+CHECK_SIZE "/etc/apt/preferences.d/00TurtlPinning"
+ynh_backup "/etc/apt/preferences.d/00TurtlPinning"
+
+#=================================================
+# BACKUP OF CCL DIRECTORIES
+#=================================================
+CHECK_SIZE "$wwwhome/.ccl-init.lisp"
+ynh_backup "$wwwhome/.ccl-init.lisp"
+CHECK_SIZE "$wwwhome/quicklisp"
+ynh_backup "$wwwhome/quicklisp"
+CHECK_SIZE "$wwwhome/.cache"
+ynh_backup "$wwwhome/.cache"
+
+#=================================================
+# BACKUP OF RSYSLOG CONFIGURATION
+#=================================================
+CHECK_SIZE "/etc/rsyslog.d/$app.conf"
+ynh_backup "/etc/rsyslog.d/$app.conf"
+
+#=================================================
+# BACKUP OF LOGS
+#=================================================
+CHECK_SIZE "/var/log/turtl"
+ynh_backup "/var/log/turtl"
+
+#=================================================
+# BACKUP OF LOGROTATE CONFIGURATION
+#=================================================
+CHECK_SIZE "/etc/logrotate.d/$app"
+ynh_backup "/etc/logrotate.d/$app"

@@ -1,0 +1,167 @@
+#!/bin/bash
+
+#=================================================
+# GENERIC START
+#=================================================
+# IMPORT GENERIC HELPERS
+#=================================================
+
+if [ ! -e _common.sh ]; then
+	# Get the _common.sh file if it's not in the current directory
+	cp ../settings/scripts/_common.sh ./_common.sh
+	chmod a+rx _common.sh
+fi
+source _common.sh
+source /usr/share/yunohost/helpers
+
+#=================================================
+# MANAGE SCRIPT FAILURE
+#=================================================
+
+# Exit if an error occurs during the execution of the script
+ynh_abort_if_errors
+
+#=================================================
+# LOAD SETTINGS
+#=================================================
+
+app=$YNH_APP_INSTANCE_NAME
+
+path=$(ynh_app_setting_get $app path)
+port=$(ynh_app_setting_get $app port)
+domain=$(ynh_app_setting_get $app domain)
+is_public=$(ynh_app_setting_get $app is_public)
+
+wwwhome=~wwwdata
+final_path="$wwwhome/$app"
+
+#=================================================
+# CHECK IF THE APP CAN BE RESTORED
+#=================================================
+
+yunohost app checkurl "${domain}${path_url}" -a "$app" \
+test ! -d $final_path \
+	|| ynh_die "There is already a directory: $final_path "
+
+#=================================================
+# RESTORE OF THE NGINX CONFIGURATION
+#=================================================
+ynh_restore_file "/etc/nginx/conf.d/$domain.d/$app.conf"
+
+#=================================================
+# RESTORE OF THE MAIN DIR OF THE APP
+#=================================================
+ynh_restore_file "$final_path"
+
+#=================================================
+# HANDLE LOG FILES AND LOGROTATE
+#=================================================
+mkdir -p /var/log/turtl
+# Restore rsyslog conf
+ynh_restore_file "/etc/rsyslog.d/$app.conf"
+# Restore logrotate conf
+ynh_restore_file "/etc/logrotate.d/$app"
+
+#=================================================
+# APT STUFF
+#=================================================
+ynh_restore_file "/etc/apt/sources.list.d/$app.list"
+ynh_restore_file "/etc/apt/preferences.d/00TurtlPinning"
+
+#=================================================
+# INSTALL DEPENDENCIES
+#=================================================
+ynh_package_update
+if ! ynh_package_is_installed "wget" ; then
+    ynh_install_app_dependencies wget
+fi
+if ! ynh_package_is_installed "git" ; then
+    ynh_install_app_dependencies git
+fi
+
+#=================================================
+# INSTALL CCL
+#=================================================
+cd /opt
+if [ $archi == "armv7l" ]
+then
+    wget -q ftp://ftp.clozure.com/pub/release/1.11/ccl-1.11-linuxarm.tar.gz
+    tar xf ccl-1.11-linuxarm.tar.gz
+else
+    wget -q ftp://ftp.clozure.com/pub/release/1.11/ccl-1.11-linuxx86.tar.gz
+    tar xf ccl-1.11-linuxx86.tar.gz
+fi
+
+cd ccl
+if [ $(grep -c "flags.* lm .*" /proc/cpuinfo) -eq 0 ]
+then
+    cp scripts/ccl /usr/bin/ccl
+else
+    cp scripts/ccl64 /usr/bin/ccl
+fi
+sed -e "s@CCL_DEFAULT_DIRECTORY=/usr/local/src/ccl@CCL_DEFAULT_DIRECTORY=/opt/ccl@" -i /usr/bin/ccl
+
+# Install some dependencies
+if [ $archi == "armv7l" ]
+then
+    gpg --keyserver pgpkeys.mit.edu --recv-key 7638D0442B90D010
+    gpg -a --export 7638D0442B90D010 | apt-key add -
+fi
+if ! ynh_package_is_installed "build-essential" ; then
+    ynh_install_app_dependencies build-essential
+fi
+ynh_install_app_dependencies libuv1-dev
+
+ynh_restore_file "$wwwhome/.ccl-init.lisp"
+ynh_restore_file "$wwwhome/quicklisp"
+ynh_restore_file "$wwwhome/.cache"
+
+#=================================================
+# INSTALL Rethinkdb
+#=================================================
+if [ $archi == "armv7l" ]
+then
+    dpkg -i ../conf/rethinkdb_2.3.6_armhf.deb
+else
+    release=$(lsb_release -cs)
+    echo "deb http://download.rethinkdb.com/apt $release main" | tee /etc/apt/sources.list.d/rethinkdb.list
+    wget -qO- https://download.rethinkdb.com/apt/pubkey.gpg | apt-key add -
+    ynh_package_update
+    ynh_install_app_dependencies rethinkdb
+fi
+
+echo "http-port=8091" > /etc/rethinkdb/instances.d/turtl.conf
+service rethinkdb restart
+
+# Install RethinkDB tools (needed for backup)
+ynh_install_app_dependencies python-pip
+pip install rethinkdb
+
+#=================================================
+# RESTORE OF THE BDD
+#=================================================
+/usr/local/bin/rethinkdb restore "$final_path/rethinkdb_dump.tar.gz"
+
+#=================================================
+# RESTORE SYSTEMD SERVICE
+#=================================================
+
+ynh_restore_file "/etc/systemd/system/$app.service"
+systemctl daemon-reload
+systemctl enable $app.service
+
+#=================================================
+# ENABLE SERVICE IN ADMIN PANEL
+#=================================================
+systemctl daemon-reload
+yunohost service add turtl --log "/var/log/turtl/$app.log"
+
+#=================================================
+# START SERVICE
+#=================================================
+yunohost service start turtl
+
+#=================================================
+# RELOAD NGINX
+#=================================================
+systemctl reload nginx

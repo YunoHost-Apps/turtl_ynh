@@ -2,6 +2,7 @@
     "name": "Turtl",
     "id": "turtl",
     "packaging_format": 1,
+    "version": "0.01",
     "description": {
         "en": "Turtl lets you take notes, bookmark websites, and store documents for sensitive projects. From sharing passwords with your coworkers to tracking research on an article you're writing, Turtl keeps it all safe from everyone but you and those you share with.",
         "fr": "Turtl vous permet de prendre des notes, de mettre en marque-page des adresses Web et de stocker des documents pour des projets sensibles. Du partage de mots de passe avec vos collègues au suivi des recherches pour un article que vous écrivez, Turtl empêche quiconque d'y accéder, sauf vous et ceux que vous partagez."
@@ -14,7 +15,7 @@
         "url": "https://framasoft.org"
     },
     "requirements": {
-        "yunohost": ">> 2.4.0"
+        "yunohost": ">> 2.6.4"
     },
     "multi_instance": false,
     "services": [

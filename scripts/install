@@ -20,8 +20,9 @@ ynh_abort_if_errors	# Active trap pour arrêter le script si une erreur est dét
 #=================================================
 
 app=$YNH_APP_INSTANCE_NAME
-domain=$YNH_APP_ARG_DOMAIN
+
 path=$YNH_APP_ARG_PATH
+domain=$YNH_APP_ARG_DOMAIN
 is_public=$YNH_APP_ARG_IS_PUBLIC
 
 #=================================================
@@ -36,22 +37,49 @@ then
 fi
 archi=$(uname -m)
 pwd=$(pwd)
+wwwhome=~www-data
 
 #=================================================
 # FIND AND OPEN A PORT
 #=================================================
 
 port=$(ynh_find_port 8181)	# Cherche un port libre.
-ynh_app_setting_set $app port $port
 
 # Store infos in YunoHost config
-ynh_app_setting_set $app domain ${domain}
+ynh_app_setting_set $app port $port
 ynh_app_setting_set $app path ${path}
+ynh_app_setting_set $app domain ${domain}
 ynh_app_setting_set $app is_public ${is_public}
 
 #=================================================
 # DEPENDENCIES
 #=================================================
+# Activate backports sources.list
+cp -a "../conf/turtl.list" "/etc/apt/sources.list.d/$app.list"
+cp -a "../conf/turtl-preferences" "/etc/apt/preferences.d/00TurtlPinning"
+if [ $archi == "armv7l" ]
+then
+    gpg --keyserver pgpkeys.mit.edu --recv-key 7638D0442B90D010
+    gpg -a --export 7638D0442B90D010 | apt-key add -
+fi
+
+if [ $archi == "armv7l" ]
+then
+    # Install RethinkDB
+    dpkg -i ../conf/rethinkdb_2.3.6_armhf.deb
+else
+    # Activate RethinkDB sources.list
+    release=$(lsb_release -cs)
+    echo "deb http://download.rethinkdb.com/apt $release main" | tee /etc/apt/sources.list.d/rethinkdb.list
+    wget -qO- https://download.rethinkdb.com/apt/pubkey.gpg | apt-key add -
+    ynh_package_update
+fi
+
+# Install dependencies
+ynh_package_update
+ynh_install_app_dependencies wget git build-essential rethinkdb libuv1-dev python-pip
+
+
 # Install Clozure Common Lisp
 cd /opt
 if [ $archi == "armv7l" ]
@@ -72,55 +100,33 @@ else
 fi
 sed -e "s@CCL_DEFAULT_DIRECTORY=/usr/local/src/ccl@CCL_DEFAULT_DIRECTORY=/opt/ccl@" -i /usr/bin/ccl
 
-# Install some dependencies
-cd $pwd
-sudo cp -a ../conf/turtl.list /etc/apt/sources.list.d/
-if [ $archi == "armv7l" ]
-then
-    gpg --keyserver pgpkeys.mit.edu --recv-key 7638D0442B90D010
-    gpg -a --export 7638D0442B90D010 | sudo apt-key add -
-fi
-sudo apt-get update
-sudo apt-get -qq -y install build-essential
-sudo apt-get -qq -t jessie-backports -y install libuv1-dev
-
 # Install QuickLisp
-sudo cp -a ../conf/ccl-init.lisp ~www-data/.ccl-init.lisp
-mkdir ~www-data/quicklisp ~www-data/.cache/
-chown www-data: ~www-data/quicklisp ~www-data/.cache/ ~www-data/.ccl-init.lisp
+cd $pwd
+cp -a ../conf/ccl-init.lisp      $wwwhome/.ccl-init.lisp
+cp -a ../conf/quicklisp.lisp     /tmp/quicklisp.lisp
+cp -a ../conf/quicklisp.lisp.asc /tmp/quicklisp.lisp.asc
 
-wget -q https://beta.quicklisp.org/quicklisp.lisp     -O /tmp/quicklisp.lisp
-wget -q https://beta.quicklisp.org/quicklisp.lisp.asc -O /tmp/quicklisp.lisp.asc
+mkdir $wwwhome/quicklisp $wwwhome/.cache/
+chown www-data: $wwwhome/quicklisp $wwwhome/.cache/ $wwwhome/.ccl-init.lisp
+
 gpg --keyserver pgpkeys.mit.edu --recv-key 307965AB028B5FF7
 gpg --verify /tmp/quicklisp.lisp.asc /tmp/quicklisp.lisp
 
 su -c 'echo -e "(quicklisp-quickstart:install)\n(quit)" | ccl --load /tmp/quicklisp.lisp' -s /bin/bash www-data
 
-echo "(pushnew \"./\" asdf :*central-registry* :test #'equal)" >> ~www-data/.ccl-init.lisp
+echo "(pushnew \"./\" asdf :*central-registry* :test #'equal)" >> $wwwhome/.ccl-init.lisp
 
 rm -f /tmp/quicklisp /tmp/quicklisp.lisp.asc
 
-# Install RethinkDB
-if [ $archi == "armv7l" ]
-then
-    sudo dpkg -i ../conf/rethinkdb_2.3.6_armhf.deb
-else
-    release=$(lsb_release -cs)
-    echo "deb http://download.rethinkdb.com/apt $release main" | sudo tee /etc/apt/sources.list.d/rethinkdb.list
-    wget -qO- https://download.rethinkdb.com/apt/pubkey.gpg | sudo apt-key add -
-    sudo apt-get update
-    sudo apt-get -qq -y install rethinkdb
-fi
-
+# Configure RethinkDB
 echo "http-port=8091" > /etc/rethinkdb/instances.d/turtl.conf
 service rethinkdb restart
 
 # Install RethinkDB tools (needed for backup)
-apt-get install python-pip
 pip install rethinkdb
 
 # Install Turtl
-cd /var/www
+cd $wwwhome
 mkdir turtl/data -p
 cd turtl
 git clone https://github.com/turtl/api.git
@@ -140,7 +146,7 @@ sed -e "s@\*server-port\* 8181@*server-port* $port@" \
     -e "s@\*site-url\* \"http://turtl.dev:8181\"@*site-url* \"https://$domain\"@" \
     -e "s@\*smtp-host\* nil@*smtp-host* \"localhost\"@" \
     -e "s@\*display-errors\* t@*display-errors* nil@" \
-    -e "s@\*local-upload\* nil@*local-upload* \"/var/www/turtl/data\"@" \
+    -e "s@\*local-upload\* nil@*local-upload* \"$wwwhome/turtl/data\"@" \
     -e "s@\*local-upload-url\* nil@*local-upload-url* \"https://$domain\"@" \
     -i config/config.lisp
 
@@ -149,38 +155,37 @@ then
     sed -e "s@\*api-path\* \"\"@\*api-path\* \"$path\"@" -i config/config.lisp
 fi
 
-ynh_store_checksum_config "config/config.lisp"  # Enregistre la somme de contrôle du fichier de config
-
 #=================================================
 # LOG HANDLING
 #=================================================
 cd $pwd
-sudo cp ../conf/rsyslogd.conf /etc/rsyslog.d/turtl.conf
-sudo service rsyslog restart
-sudo cp ../conf/logrotate.conf /etc/logrotate.d/turtl
+cp "../conf/rsyslogd.conf" "/etc/rsyslog.d/$app.conf"
+service rsyslog restart
+mkdir /var/log/turtl/ -p
+cp "../conf/logrotate.conf" "/etc/logrotate.d/$app"
 
 #=================================================
 # ENABLE SERVICE IN ADMIN PANEL
 #=================================================
 # Add service to Yunohost monitoring
-sudo cp ../conf/turtl.service /etc/systemd/system/
-sudo systemctl daemon-reload
-sudo yunohost service add turtl --log "/var/log/turtl/turtl.log"
-sudo yunohost service start turtl
+cp "../conf/turtl.service" "/etc/systemd/system/$app.service"
+systemctl daemon-reload
+yunohost service add turtl --log "/var/log/turtl/$app.log"
+yunohost service start turtl
 
 #=================================================
 # NGINX
 #=================================================
 # Copy Nginx conf
-sudo cp ../conf/nginx.conf /etc/nginx/conf.d/$domain.d/$app.conf
+cp ../conf/nginx.conf /etc/nginx/conf.d/$domain.d/$app.conf
 
 # Change variables in Nginx configuration
 if [ $is_public -eq 1 ];
 then
     ynh_app_setting_set "$app" unprotected_uris "$path"
 fi
-sudo sed -i "s@__PATH__@$path@g" /etc/nginx/conf.d/$domain.d/$app.conf
-sudo sed -i "s@__PORT__@$port@g" /etc/nginx/conf.d/$domain.d/$app.conf
+sed -i "s@__PATH__@$path@g" /etc/nginx/conf.d/$domain.d/$app.conf
+sed -i "s@__PORT__@$port@g" /etc/nginx/conf.d/$domain.d/$app.conf
 
-# Reload Nginy
-sudo service nginx reload
+# Reload Nginx
+service nginx reload
