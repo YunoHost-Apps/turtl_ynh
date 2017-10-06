@@ -1,2 +1,0 @@
-yunohost app install https://github.com/ldidry/Turtl_ynh.git --verbose  -a "is_public=0&domain=ynh.pi&path=/" --debug
-yunohost app remove turtl
