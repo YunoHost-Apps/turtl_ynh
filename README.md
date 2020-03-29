@@ -1,5 +1,7 @@
 # Turtl app for YunoHost
 
+[![Integration level](https://dash.yunohost.org/integration/turtl.svg)](https://dash.yunohost.org/appci/app/turtl) ![](https://ci-apps.yunohost.org/ci/badges/turtl.status.svg) ![](https://ci-apps.yunohost.org/ci/badges/turtl.maintain.svg)
+
 - [Yunohost project](https://yunohost.org)
 - [Turtl website](https://turtlapp.com/)
 
