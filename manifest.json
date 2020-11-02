@@ -4,8 +4,8 @@
     "packaging_format": 1,
     "version": "0.01",
     "description": {
-        "en": "Turtl lets you take notes, bookmark websites, and store documents for sensitive projects. From sharing passwords with your coworkers to tracking research on an article you're writing, Turtl keeps it all safe from everyone but you and those you share with.",
-        "fr": "Turtl vous permet de prendre des notes, de mettre en marque-page des adresses Web et de stocker des documents pour des projets sensibles. Du partage de mots de passe avec vos collègues au suivi des recherches pour un article que vous écrivez, Turtl empêche quiconque d'y accéder, sauf vous et ceux que vous partagez."
+        "en": "Share notes, bookmarks, and documents for sensitive projects",
+        "fr": "Partagez des notes, des marque-pages et autre documents pour des projets sensibles"
     },
     "url": "https://turtlapp.com/",
     "license": "MIT",
