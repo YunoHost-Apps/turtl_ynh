@@ -1,0 +1,17 @@
+[Unit]
+Description=Note taking service
+Documentation=http://turtl.it
+Requires=network.target rethinkdb.service
+After=network.target rethinkdb.service
+
+[Service]
+Type=simple
+User=__APP__
+Group=__APP__
+WorkingDirectory=__FINALPATH__/api/
+Environment="PATH=__ENV_PATH__"
+ExecStart=/usr/bin/ccl -Q -b --load start.lisp
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target

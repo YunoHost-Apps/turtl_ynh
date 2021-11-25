@@ -143,16 +143,7 @@ chown $app:$app "$final_path/config/config.yaml"
 #=================================================
 ynh_script_progression --message="Configuring a systemd service..." --time --weight=1
 
-### `ynh_systemd_config` is used to configure a systemd script for an app.
-### It can be used for apps that use sysvinit (with adaptation) or systemd.
-### Have a look at the app to be sure this app needs a systemd script.
-### `ynh_systemd_config` will use the file conf/systemd.service
-### If you're not using these lines:
-###     - You can remove those files in conf/.
-###     - Remove the section "BACKUP SYSTEMD" in the backup script
-###     - Remove also the section "STOP AND REMOVE SERVICE" in the remove script
-###     - As well as the section "RESTORE SYSTEMD" in the restore script
-###     - And the section "SETUP SYSTEMD" in the upgrade script
+ynh_replace_string --match_string="__ENV_PATH__" --replace_string="$PATH" --target_file="../conf/systemd.service"
 
 # Create a dedicated systemd config
 ynh_add_systemd_config
