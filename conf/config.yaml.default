@@ -42,7 +42,7 @@ sync:
   max_bulk_sync_records: 32
 
 plugins:
-  #plugin_location: '__FINALPATH__/example-plugins'
+  plugin_location: '__FINALPATH__/plugins'
   # each key here corresponds to a folder name in the plugins folder, so `email`
   # below would be a plugin at /var/www/turtl/server/plugins/email (see the
   # example-plugins/ folder for an email plugin you can use)
