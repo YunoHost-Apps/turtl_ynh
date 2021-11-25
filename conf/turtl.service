@@ -1,15 +1,14 @@
 [Unit]
 Description=Note taking service
 Documentation=http://turtl.it
-Requires=network.target
-Requires=rethinkdb.service
-After=network.target
-After=rethinkdb.service
+Requires=network.target rethinkdb.service
+After=network.target rethinkdb.service
 
 [Service]
 Type=simple
-User=www-data
-WorkingDirectory=/var/www/turtl/api/
+User=__APP__
+Group=__APP__
+WorkingDirectory=__FINALPATH__/api/
 ExecStart=/usr/bin/ccl -Q -b --load start.lisp
 Restart=on-failure
 
