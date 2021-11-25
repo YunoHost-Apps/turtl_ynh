@@ -132,7 +132,7 @@ chown $app:$app "$final_path/config/config.yaml"
 #=================================================
 # SETUP SYSTEMD
 #=================================================
-ynh_script_progression --message="Configuring a systemd service..." --time --weight=1
+ynh_script_progression --message="Configuring a systemd service..." --weight=2
 
 ynh_replace_string --match_string="__ENV_PATH__" --replace_string="$PATH" --target_file="../conf/systemd.service"
 # Create a dedicated systemd config
@@ -143,7 +143,7 @@ ynh_add_systemd_config
 #=================================================
 # SETUP LOGROTATE
 #=================================================
-ynh_script_progression --message="Configuring log rotation..." --time --weight=1
+ynh_script_progression --message="Configuring log rotation..." --weight=4
 
 # Use logrotate to manage application logfile(s)
 ynh_use_logrotate

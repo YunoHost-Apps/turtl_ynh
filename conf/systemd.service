@@ -6,7 +6,7 @@ After=network.target
 Type=simple
 User=__APP__
 Group=__APP__
-WorkingDirectory=__FINALPATH__/api/
+WorkingDirectory=__FINALPATH__/
 Environment="PATH=__ENV_PATH__"
 ExecStart=__YNH_NODE__ __FINALPATH__/server.js
 Restart=on-failure
