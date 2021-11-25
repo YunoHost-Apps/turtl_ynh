@@ -2,7 +2,7 @@
 server:
   # Per default, turtl will listen on all IP addresses
   # You can choose the IP it will use with this parameter
-  host: _IP_SERVER__
+  host: __PUBLIC_IP4__
   port: __PORT__
 
 db:

@@ -9,10 +9,10 @@ User=__APP__
 Group=__APP__
 WorkingDirectory=__FINALPATH__/
 Environment="PATH=__ENV_PATH__"
-ExecStart=__YNH_NODE__ __FINALPATH__/entrypoint.sh
+ExecStart=__YNH_NODE__ __FINALPATH__/server.js
 StandardOutput=syslog
 StandardError=syslog
-SyslogIdentifier=turtl
+SyslogIdentifier=__APP__
 Restart=always
 RestartSec=10
 StartLimitInterval=900
