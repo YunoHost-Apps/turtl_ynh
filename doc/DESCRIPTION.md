@@ -1,4 +1,4 @@
-Some long and extensive description of what the app is and does, lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.
+Turtl is a free online service that allows you to create, synchronize and find your notes, in an encrypted manner. 
 
 ### Features
 
