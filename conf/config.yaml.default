@@ -16,7 +16,7 @@ app:
   # Set to 'I UNDERSTAND THIS VIOLATES THE PRIVACY OF MY USERS' to enable
   enable_bookmarker_proxy: false
   # no trailing slash
-  api_url: 'https://__DOMAIN__'
+  api_url: 'https://turtl.__DOMAIN__'
   www_url: 'https://__DOMAIN__'
   login:
     # Max failed login attemps. Set to -1 to disable
