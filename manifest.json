@@ -15,7 +15,7 @@
         "url": "https://framasoft.org"
     },
     "requirements": {
-        "yunohost": ">> 2.6.4"
+        "yunohost": ">> 4.3.0"
     },
     "multi_instance": false,
     "services": [
@@ -25,20 +25,11 @@
         "install" : [
             {
                 "name": "domain",
-                "type": "domain",
-                "ask": {
-                    "en": "Choose a domain for your turtl server",
-                    "fr": "Choisissez un domaine pour votre serveur turtl"
-                },
-                "example": "domain.org"
+                "type": "domain"
             },
             {
                 "name": "path",
                 "type": "path",
-                "ask": {
-                    "en": "Choose a path for Turtl",
-                    "fr": "Choisissez un chemin pour Turtl"
-                },
                 "example": "/turtl",
                 "default": "/"
             },
