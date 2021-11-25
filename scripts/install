@@ -143,7 +143,6 @@ chown -R $app:www-data "$datadir"
 #=================================================
 ynh_script_progression --message="Adding a configuration file..." --weight=1
 
-public_ip4="$(curl -s ip.yunohost.org)" || true
 ynh_add_config --template="../conf/config.yaml.default" --destination="$final_path/config/config.yaml"
 
 chmod 400 "$final_path/config/config.yaml"
