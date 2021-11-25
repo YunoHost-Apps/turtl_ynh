@@ -11,7 +11,6 @@
     "upstream": {
         "license": "MIT",
         "website": "https://turtlapp.com/",
-        "demo": "https://demo.example.com",
         "admindoc": "https://turtlapp.com/docs/",
         "code": "https://github.com/turtl/server"
     },
