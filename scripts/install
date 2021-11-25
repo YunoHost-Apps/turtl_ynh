@@ -65,7 +65,6 @@ ynh_app_setting_set --app=$app --key=port --value=$port
 ynh_script_progression --message="Installing dependencies..." --weight=20
 
 ynh_exec_warn_less ynh_install_app_dependencies $pkg_dependencies
-
 # Install Nodejs
 ynh_exec_warn_less ynh_install_nodejs --nodejs_version=$nodejs_version
 
@@ -83,6 +82,7 @@ ynh_system_user_create --username=$app --home_dir="$final_path"
 ynh_script_progression --message="Creating a PostgreSQL database..." --weight=2
 
 db_name=$(ynh_sanitize_dbid --db_name=$app)
+db_user=$db_name
 ynh_app_setting_set --app=$app --key=db_name --value=$db_name
 ynh_psql_test_if_first_run
 ynh_psql_setup_db --db_user=$db_name --db_name=$db_name
@@ -135,7 +135,6 @@ chown $app:$app "$final_path/config/config.yaml"
 ynh_script_progression --message="Configuring a systemd service..." --time --weight=1
 
 ynh_replace_string --match_string="__ENV_PATH__" --replace_string="$PATH" --target_file="../conf/systemd.service"
-
 # Create a dedicated systemd config
 ynh_add_systemd_config
 
