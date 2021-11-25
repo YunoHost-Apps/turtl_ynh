@@ -80,8 +80,12 @@ if [ "$upgrade_type" == "UPGRADE_APP" ]
 then
 	ynh_script_progression --message="Upgrading source files..." --weight=2
 
-	# Download, check integrity, uncompress and patch the source from app.src
-	git pull https://github.com/turtl/server "$final_path" --quiet
+	pushd $final_path
+		git fetch
+    	#git checkout master
+    	git reset --hard --quiet $version_commit
+		git pull
+	popd
 fi
 
 chmod 750 "$final_path"
