@@ -24,9 +24,9 @@ app:
     # User locked for this duration in seconds
     lock_duration: 60
   emails:
-    admin: 'admin@turtlapp.com'
-    info: 'Turtl <info@turtlapp.com>'
-    invites: 'invites@turtlapp.com'
+    admin: 'admin@__DOMAIN__'
+    info: 'Turtl <info@__DOMAIN__>'
+    invites: 'invites@__DOMAIN__'
   # TODO: replace this with a long, unique value. seriously. write down a dream
   # you had, or the short story you came up with during your creative writing
   # class in your freshmen year of college. have fun with it.
