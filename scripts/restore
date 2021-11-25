@@ -6,162 +6,182 @@
 # IMPORT GENERIC HELPERS
 #=================================================
 
-if [ ! -e _common.sh ]; then
-	# Get the _common.sh file if it's not in the current directory
-	cp ../settings/scripts/_common.sh ./_common.sh
-	chmod a+rx _common.sh
-fi
-source _common.sh
+# Keep this path for calling _common.sh inside the execution's context of backup and restore scripts
+source ../settings/scripts/_common.sh
 source /usr/share/yunohost/helpers
 
 #=================================================
 # MANAGE SCRIPT FAILURE
 #=================================================
 
+ynh_clean_setup () {
+    #### Remove this function if there's nothing to clean before calling the remove script.
+    true
+}
 # Exit if an error occurs during the execution of the script
 ynh_abort_if_errors
 
 #=================================================
 # LOAD SETTINGS
 #=================================================
+ynh_script_progression --message="Loading installation settings..." --time --weight=1
 
 app=$YNH_APP_INSTANCE_NAME
 
-path=$(ynh_app_setting_get $app path)
-port=$(ynh_app_setting_get $app port)
-domain=$(ynh_app_setting_get $app domain)
-is_public=$(ynh_app_setting_get $app is_public)
-
-wwwhome=~wwwdata
-final_path="$wwwhome/$app"
+domain=$(ynh_app_setting_get --app=$app --key=domain)
+path_url=$(ynh_app_setting_get --app=$app --key=path)
+final_path=$(ynh_app_setting_get --app=$app --key=final_path)
+db_name=$(ynh_app_setting_get --app=$app --key=db_name)
+db_user=$db_name
+phpversion=$(ynh_app_setting_get --app=$app --key=phpversion)
+datadir=$(ynh_app_setting_get --app=$app --key=datadir)
 
 #=================================================
 # CHECK IF THE APP CAN BE RESTORED
 #=================================================
+ynh_script_progression --message="Validating restoration parameters..." --time --weight=1
 
-yunohost app checkurl "${domain}${path_url}" -a "$app" \
 test ! -d $final_path \
-	|| ynh_die "There is already a directory: $final_path "
+    || ynh_die --message="There is already a directory: $final_path "
 
 #=================================================
-# RESTORE OF THE NGINX CONFIGURATION
+# STANDARD RESTORATION STEPS
 #=================================================
-ynh_restore_file "/etc/nginx/conf.d/$domain.d/$app.conf"
+# RESTORE THE NGINX CONFIGURATION
+#=================================================
+ynh_script_progression --message="Restoring the NGINX configuration..." --time --weight=1
+
+ynh_restore_file --origin_path="/etc/nginx/conf.d/$domain.d/$app.conf"
 
 #=================================================
-# RESTORE OF THE MAIN DIR OF THE APP
+# RECREATE THE DEDICATED USER
 #=================================================
-ynh_restore_file "$final_path"
+ynh_script_progression --message="Recreating the dedicated system user..." --time --weight=1
+
+# Create the dedicated user (if not existing)
+ynh_system_user_create --username=$app --home_dir="$final_path"
 
 #=================================================
-# HANDLE LOG FILES AND LOGROTATE
+# RESTORE THE APP MAIN DIR
 #=================================================
-mkdir -p /var/log/turtl
-# Restore rsyslog conf
-ynh_restore_file "/etc/rsyslog.d/$app.conf"
-# Restore logrotate conf
-ynh_restore_file "/etc/logrotate.d/$app"
+ynh_script_progression --message="Restoring the app main directory..." --time --weight=1
+
+ynh_restore_file --origin_path="$final_path"
+
+# FIXME: this should be managed by the core in the future
+# Here, as a packager, you may have to tweak the ownerhsip/permissions
+# such that the appropriate users (e.g. maybe www-data) can access
+# files in some cases.
+# But FOR THE LOVE OF GOD, do not allow r/x for "others" on the entire folder -
+# this will be treated as a security issue.
+chmod 750 "$final_path"
+chmod -R o-rwx "$final_path"
+chown -R $app:www-data "$final_path"
 
 #=================================================
-# APT STUFF
+# RESTORE THE DATA DIRECTORY
 #=================================================
-ynh_restore_file "/etc/apt/sources.list.d/$app.list"
-ynh_restore_file "/etc/apt/preferences.d/00TurtlPinning"
+ynh_script_progression --message="Restoring the data directory..." --time --weight=1
+
+ynh_restore_file --origin_path="$datadir" --not_mandatory
+
+mkdir -p $datadir
+
+# FIXME: this should be managed by the core in the future
+# Here, as a packager, you may have to tweak the ownerhsip/permissions
+# such that the appropriate users (e.g. maybe www-data) can access
+# files in some cases.
+# But FOR THE LOVE OF GOD, do not allow r/x for "others" on the entire folder -
+# this will be treated as a security issue.
+chmod 750 "$datadir"
+chmod -R o-rwx "$datadir"
+chown -R $app:www-data "$datadir"
 
 #=================================================
-# INSTALL DEPENDENCIES
+# RESTORE THE PHP-FPM CONFIGURATION
 #=================================================
-ynh_package_update
-if ! ynh_package_is_installed "wget" ; then
-    ynh_install_app_dependencies wget
-fi
-if ! ynh_package_is_installed "git" ; then
-    ynh_install_app_dependencies git
-fi
+ynh_script_progression --message="Restoring the PHP-FPM configuration..." --time --weight=1
+
+ynh_restore_file --origin_path="/etc/php/$phpversion/fpm/pool.d/$app.conf"
 
 #=================================================
-# INSTALL CCL
+# RESTORE FAIL2BAN CONFIGURATION
 #=================================================
-cd /opt
-if [ $archi == "armv7l" ]
-then
-    wget -q ftp://ftp.clozure.com/pub/release/1.11/ccl-1.11-linuxarm.tar.gz
-    tar xf ccl-1.11-linuxarm.tar.gz
-else
-    wget -q ftp://ftp.clozure.com/pub/release/1.11/ccl-1.11-linuxx86.tar.gz
-    tar xf ccl-1.11-linuxx86.tar.gz
-fi
+ynh_script_progression --message="Restoring the Fail2Ban configuration..." --time --weight=1
 
-cd ccl
-if [ $(grep -c "flags.* lm .*" /proc/cpuinfo) -eq 0 ]
-then
-    cp scripts/ccl /usr/bin/ccl
-else
-    cp scripts/ccl64 /usr/bin/ccl
-fi
-sed -e "s@CCL_DEFAULT_DIRECTORY=/usr/local/src/ccl@CCL_DEFAULT_DIRECTORY=/opt/ccl@" -i /usr/bin/ccl
-
-# Install some dependencies
-if [ $archi == "armv7l" ]
-then
-    gpg --keyserver pgpkeys.mit.edu --recv-key 7638D0442B90D010
-    gpg -a --export 7638D0442B90D010 | apt-key add -
-fi
-if ! ynh_package_is_installed "build-essential" ; then
-    ynh_install_app_dependencies build-essential
-fi
-ynh_install_app_dependencies libuv1-dev
-
-ynh_restore_file "$wwwhome/.ccl-init.lisp"
-ynh_restore_file "$wwwhome/quicklisp"
-ynh_restore_file "$wwwhome/.cache"
+ynh_restore_file "/etc/fail2ban/jail.d/$app.conf"
+ynh_restore_file "/etc/fail2ban/filter.d/$app.conf"
+ynh_systemd_action --action=restart --service_name=fail2ban
 
 #=================================================
-# INSTALL Rethinkdb
+# SPECIFIC RESTORATION
 #=================================================
-if [ $archi == "armv7l" ]
-then
-    dpkg -i ../conf/rethinkdb_2.3.6_armhf.deb
-else
-    release=$(lsb_release -cs)
-    echo "deb http://download.rethinkdb.com/apt $release main" | tee /etc/apt/sources.list.d/rethinkdb.list
-    wget -qO- https://download.rethinkdb.com/apt/pubkey.gpg | apt-key add -
-    ynh_package_update
-    ynh_install_app_dependencies rethinkdb
-fi
+# REINSTALL DEPENDENCIES
+#=================================================
+ynh_script_progression --message="Reinstalling dependencies..." --time --weight=1
 
-echo "http-port=8091" > /etc/rethinkdb/instances.d/turtl.conf
-service rethinkdb restart
-
-# Install RethinkDB tools (needed for backup)
-ynh_install_app_dependencies python-pip
-pip install rethinkdb
+# Define and install dependencies
+ynh_install_app_dependencies $pkg_dependencies
 
 #=================================================
-# RESTORE OF THE BDD
+# RESTORE THE MYSQL DATABASE
 #=================================================
-/usr/local/bin/rethinkdb restore "$final_path/rethinkdb_dump.tar.gz"
+ynh_script_progression --message="Restoring the MySQL database..." --time --weight=1
+
+db_pwd=$(ynh_app_setting_get --app=$app --key=mysqlpwd)
+ynh_mysql_setup_db --db_user=$db_user --db_name=$db_name --db_pwd=$db_pwd
+ynh_mysql_connect_as --user=$db_user --password=$db_pwd --database=$db_name < ./db.sql
 
 #=================================================
-# RESTORE SYSTEMD SERVICE
+# RESTORE VARIOUS FILES
 #=================================================
+ynh_script_progression --message="Restoring various files..." --time --weight=1
 
-ynh_restore_file "/etc/systemd/system/$app.service"
-systemctl daemon-reload
-systemctl enable $app.service
+ynh_restore_file --origin_path="/etc/cron.d/$app"
 
-#=================================================
-# ENABLE SERVICE IN ADMIN PANEL
-#=================================================
-systemctl daemon-reload
-yunohost service add turtl --log "/var/log/turtl/$app.log"
+ynh_restore_file --origin_path="/etc/$app/"
 
 #=================================================
-# START SERVICE
+# RESTORE SYSTEMD
 #=================================================
-yunohost service start turtl
+ynh_script_progression --message="Restoring the systemd configuration..." --time --weight=1
+
+ynh_restore_file --origin_path="/etc/systemd/system/$app.service"
+systemctl enable $app.service --quiet
 
 #=================================================
-# RELOAD NGINX
+# RESTORE THE LOGROTATE CONFIGURATION
 #=================================================
-systemctl reload nginx
+ynh_script_progression --message="Restoring the logrotate configuration..." --time --weight=1
+
+ynh_restore_file --origin_path="/etc/logrotate.d/$app"
+
+#=================================================
+# INTEGRATE SERVICE IN YUNOHOST
+#=================================================
+ynh_script_progression --message="Integrating service in YunoHost..." --time --weight=1
+
+yunohost service add $app --description="A short description of the app" --log="/var/log/$app/$app.log"
+
+#=================================================
+# START SYSTEMD SERVICE
+#=================================================
+ynh_script_progression --message="Starting a systemd service..." --time --weight=1
+
+ynh_systemd_action --service_name=$app --action="start" --log_path="/var/log/$app/$app.log"
+
+#=================================================
+# GENERIC FINALIZATION
+#=================================================
+# RELOAD NGINX AND PHP-FPM
+#=================================================
+ynh_script_progression --message="Reloading NGINX web server and PHP-FPM..." --time --weight=1
+
+ynh_systemd_action --service_name=php$phpversion-fpm --action=reload
+ynh_systemd_action --service_name=nginx --action=reload
+
+#=================================================
+# END OF SCRIPT
+#=================================================
+
+ynh_script_progression --message="Restoration completed for $app" --time --last
