@@ -52,7 +52,7 @@ ynh_script_progression --message="Removing logrotate configuration..." --weight=
 ynh_remove_logrotate
 
 #=================================================
-# REMOVE THE MYSQL DATABASE
+# REMOVE THE POSTGRESQL  DATABASE
 #=================================================
 ynh_script_progression --message="Removing the PostgreSQL database..." --weight=1
 
