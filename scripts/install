@@ -124,7 +124,6 @@ popd
 #=================================================
 ynh_script_progression --message="Adding a configuration file..." --weight=1
 
-cp config/config.yaml.default config/config.yaml
 ynh_add_config --template="../conf/config.yaml.default" --destination="$final_path/config/config.yaml"
 
 chmod 400 "$final_path/config/config.yaml"
