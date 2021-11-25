@@ -35,7 +35,7 @@ Some long and extensive description of what the app is and does, lorem ipsum dol
 
 **Version incluse :** 1.0~ynh1
 
-**Démo :** https://demo.example.com
+
 
 ## Captures d'écran
 
