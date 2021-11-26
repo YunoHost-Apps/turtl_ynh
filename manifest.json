@@ -40,7 +40,7 @@
                     "en": "Is it a public server? (should we announce it?)",
                     "fr": "Est-ce un serveur public ? (devons-nous l'annoncer ?)"
                 },
-                "default": false
+                "default": true
             }
         ]
     }
