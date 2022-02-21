@@ -47,7 +47,7 @@ Turtl is a free online service that allows you to create, synchronize and find y
 
 ## Documentation and resources
 
-* Official app website: https://turtlapp.com/
+* Official app website: https://turtlapp.com
 * Official admin documentation: https://turtlapp.com/docs/
 * Upstream app code repository: https://github.com/turtl/server
 * YunoHost documentation for this app: https://yunohost.org/app_turtl
