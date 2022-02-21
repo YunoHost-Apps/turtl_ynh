@@ -43,7 +43,7 @@ Turtl is a free online service that allows you to create, synchronize and find y
 
 ## Documentations et ressources
 
-* Site officiel de l'app : https://turtlapp.com/
+* Site officiel de l'app : https://turtlapp.com
 * Documentation officielle de l'admin : https://turtlapp.com/docs/
 * Dépôt de code officiel de l'app : https://github.com/turtl/server
 * Documentation YunoHost pour cette app : https://yunohost.org/app_turtl
