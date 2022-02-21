@@ -8,7 +8,7 @@ Type=simple
 User=__APP__
 Group=__APP__
 WorkingDirectory=__FINALPATH__/
-Environment="PATH=__ENV_PATH__"
+Environment="PATH=__PATH__"
 ExecStart=__YNH_NODE__ __FINALPATH__/server.js
 StandardOutput=syslog
 StandardError=syslog
