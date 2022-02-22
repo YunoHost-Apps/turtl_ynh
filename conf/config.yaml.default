@@ -1,0 +1,71 @@
+---
+server:
+  # Per default, turtl will listen on all IP addresses
+  # You can choose the IP it will use with this parameter
+  host: '127.0.0.1'
+  port: __PORT__
+
+db:
+  connstr: 'postgres://__DB_USER__:__DB_PWD__@127.0.0.1:5432/__DB_NAME__'
+  pool: 24
+
+loglevel: 'info'
+
+app:
+  # ALWAYS false in production. Always.
+  # Set to 'I UNDERSTAND THIS VIOLATES THE PRIVACY OF MY USERS' to enable
+  enable_bookmarker_proxy: false
+  # no trailing slash
+  api_url: 'https://__DOMAIN__'
+  www_url: 'https://__DOMAIN__'
+  login:
+    # Max failed login attemps. Set to -1 to disable
+    max_attemps: 5
+    # User locked for this duration in seconds
+    lock_duration: 60
+  emails:
+    admin: 'admin@__DOMAIN__'
+    info: 'Turtl <info@__DOMAIN__>'
+    invites: 'invites@__DOMAIN__'
+  # TODO: replace this with a long, unique value. seriously. write down a dream
+  # you had, or the short story you came up with during your creative writing
+  # class in your freshmen year of college. have fun with it.
+  secure_hash_salt: "__HASH__"
+  # set to true if you think it's ok to SEND invites if you have not confirmed
+  # your account. great for testing, not so great for production. but what do
+  # i know...
+  allow_unconfirmed_invites: false
+
+sync:
+  # how many sync records can a client send at a time? it's a good idea to have
+  # a limit here, lest a rogue client flood the server with sync items
+  max_bulk_sync_records: 32
+
+plugins:
+  plugin_location: '__FINALPATH__/plugins'
+  # each key here corresponds to a folder name in the plugins folder, so `email`
+  # below would be a plugin at /var/www/turtl/server/plugins/email (see the
+  # example-plugins/ folder for an email plugin you can use)
+  #email:
+  #  enabled: false
+  #  endpoint: 'smtps://user:password@smtp.gmail.com/?pool=true'
+  #  defaults: {}
+
+uploads:
+  # if set to a path, files will be uploaded to the local filesystem instead of
+  # S3. otherwise, set to false
+  local: '__DATADIR__'
+  # if true, downloading local files will be proxied through the turtl server.
+  # this avoids needing to set up any CORS config in your favorite webserver,
+  # but may slightly affect performance on high-demand servers.
+  local_proxy: true
+  # if local_proxy is false, this is should be the url path the uploaded files
+  # are publicly available on
+  url: 'http://api.turtl.dev/uploads'
+
+s3:
+  token: ''
+  secret: ''
+  bucket: ''
+  endpoint: 'https://s3.amazonaws.com'
+  pathstyle: false

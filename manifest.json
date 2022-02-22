@@ -2,12 +2,18 @@
     "name": "Turtl",
     "id": "turtl",
     "packaging_format": 1,
-    "version": "0.01",
     "description": {
         "en": "Share notes, bookmarks, and documents for sensitive projects",
         "fr": "Partagez des notes, des marque-pages et autre documents pour des projets sensibles"
     },
-    "url": "https://turtlapp.com/",
+    "version": "1.0~ynh1",
+    "url": "https://turtlapp.com",
+    "upstream": {
+        "license": "MIT",
+        "website": "https://turtlapp.com",
+        "admindoc": "https://turtlapp.com/docs/",
+        "code": "https://github.com/turtl/server"
+    },
     "license": "MIT",
     "maintainer": {
         "name": "Luc Didry",
@@ -15,41 +21,22 @@
         "url": "https://framasoft.org"
     },
     "requirements": {
-        "yunohost": ">> 2.6.4"
+        "yunohost": ">= 4.3.0"
     },
     "multi_instance": false,
     "services": [
-        "turtl"
+        "nginx"
     ],
     "arguments": {
-        "install" : [
+        "install": [
             {
                 "name": "domain",
-                "type": "domain",
-                "ask": {
-                    "en": "Choose a domain for your turtl server",
-                    "fr": "Choisissez un domaine pour votre serveur turtl"
-                },
-                "example": "domain.org"
-            },
-            {
-                "name": "path",
-                "type": "path",
-                "ask": {
-                    "en": "Choose a path for Turtl",
-                    "fr": "Choisissez un chemin pour Turtl"
-                },
-                "example": "/turtl",
-                "default": "/"
+                "type": "domain"
             },
             {
                 "name": "is_public",
                 "type": "boolean",
-                "ask": {
-                    "en": "Is it a public server? (should we announce it?)",
-                    "fr": "Est-ce un serveur public ? (devons-nous l'annoncer ?)"
-                },
-                "default": false
+                "default": true
             }
         ]
     }

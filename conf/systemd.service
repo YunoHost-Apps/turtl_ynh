@@ -1,0 +1,22 @@
+[Unit]
+Description=Turtl Server: Note taking service
+Documentation=https://turtlapp.com/
+After=network.target postgresql.service
+
+[Service]
+Type=simple
+User=__APP__
+Group=__APP__
+WorkingDirectory=__FINALPATH__/
+Environment="PATH=__PATH__"
+ExecStart=__YNH_NODE__ __FINALPATH__/server.js
+StandardOutput=syslog
+StandardError=syslog
+SyslogIdentifier=__APP__
+Restart=always
+RestartSec=10
+StartLimitInterval=900
+StartLimitBurst=3
+
+[Install]
+WantedBy=multi-user.target

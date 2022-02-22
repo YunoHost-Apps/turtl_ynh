@@ -1,7 +1,7 @@
 #!/bin/bash
 
-set -eu
-
+#=================================================
+# GENERIC START
 #=================================================
 # IMPORT GENERIC HELPERS
 #=================================================
@@ -10,198 +10,191 @@ source _common.sh
 source /usr/share/yunohost/helpers
 
 #=================================================
-# MANAGE FAILURE OF THE SCRIPT
+# MANAGE SCRIPT FAILURE
 #=================================================
 
-ynh_abort_if_errors	# Active trap pour arrêter le script si une erreur est détectée.
+ynh_clean_setup () {
+	ynh_clean_check_starting
+}
+# Exit if an error occurs during the execution of the script
+ynh_abort_if_errors
 
 #=================================================
 # RETRIEVE ARGUMENTS FROM THE MANIFEST
 #=================================================
 
-app=$YNH_APP_INSTANCE_NAME
-
-path=$YNH_APP_ARG_PATH
 domain=$YNH_APP_ARG_DOMAIN
+path_url="/"
 is_public=$YNH_APP_ARG_IS_PUBLIC
 
-#=================================================
-# CHECK THE DEBIAN'S CODENAME
-#=================================================
+hash=$(ynh_string_random --length=128)
 
-codename=$(lsb_release -a 2>/dev/null | grep Codename | cut -f 2)
-test -z "$codename" && (ynh_die "codename empty")
-if [ $codename != 'jessie' ]
-then
-    ynh_die "Sorry, it can only be installed on Debian Jessie"
-fi
-archi=$(uname -m)
-pwd=$(pwd)
-wwwhome=~www-data
+app=$YNH_APP_INSTANCE_NAME
+
+#=================================================
+# CHECK IF THE APP CAN BE INSTALLED WITH THESE ARGS
+#=================================================
+ynh_script_progression --message="Validating installation parameters..." --weight=1
+
+final_path=/var/www/$app
+test ! -e "$final_path" || ynh_die --message="This path already contains a folder"
+
+# Register (book) web path
+ynh_webpath_register --app=$app --domain=$domain --path_url=$path_url
+
+#=================================================
+# STORE SETTINGS FROM MANIFEST
+#=================================================
+ynh_script_progression --message="Storing installation settings..." --weight=1
+
+ynh_app_setting_set --app=$app --key=domain --value=$domain
+ynh_app_setting_set --app=$app --key=path --value=$path_url
 
 #=================================================
 # FIND AND OPEN A PORT
 #=================================================
+ynh_script_progression --message="Finding an available port..." --weight=2
 
-port=$(ynh_find_port 8181)	# Cherche un port libre.
-
-# Store infos in YunoHost config
-ynh_app_setting_set $app port $port
-ynh_app_setting_set $app path ${path}
-ynh_app_setting_set $app domain ${domain}
-ynh_app_setting_set $app is_public ${is_public}
+# Find an available port
+port=$(ynh_find_port --port=8181)
+ynh_app_setting_set --app=$app --key=port --value=$port
 
 #=================================================
-# DEPENDENCIES
+# INSTALL DEPENDENCIES
 #=================================================
-# Activate backports sources.list
-cp -a "../conf/turtl.list" "/etc/apt/sources.list.d/$app.list"
-cp -a "../conf/turtl-preferences" "/etc/apt/preferences.d/00TurtlPinning"
-if [ $archi == "armv7l" ]
+ynh_script_progression --message="Installing dependencies..." --weight=20
+
+ynh_exec_warn_less ynh_install_app_dependencies $pkg_dependencies
+ynh_exec_warn_less ynh_install_nodejs --nodejs_version=$nodejs_version
+
+#=================================================
+# CREATE DEDICATED USER
+#=================================================
+ynh_script_progression --message="Configuring system user..." --weight=1
+
+# Create a system user
+ynh_system_user_create --username=$app --home_dir="$final_path"
+
+#=================================================
+# CREATE A POSTGRESQL DATABASE
+#=================================================
+ynh_script_progression --message="Creating a PostgreSQL database..." --weight=2
+
+db_name=$(ynh_sanitize_dbid --db_name=$app)
+db_user=$db_name
+ynh_app_setting_set --app=$app --key=db_name --value=$db_name
+ynh_psql_test_if_first_run
+ynh_psql_setup_db --db_user=$db_user --db_name=$db_name
+
+#=================================================
+# DOWNLOAD, CHECK AND UNPACK SOURCE
+#=================================================
+ynh_script_progression --message="Setting up source files..." --weight=3
+
+ynh_app_setting_set --app=$app --key=final_path --value=$final_path
+# Download, check integrity, uncompress and patch the source from app.src
+ynh_setup_source --dest_dir="$final_path"
+
+mkdir -p $final_path/plugins
+
+chmod 700 $final_path/plugins
+chown $app:$app $final_path/plugins
+
+chmod 750 "$final_path"
+chmod -R o-rwx "$final_path"
+chown -R $app:www-data "$final_path"
+
+#=================================================
+# NGINX CONFIGURATION
+#=================================================
+ynh_script_progression --message="Configuring NGINX web server..." --weight=1
+
+# Create a dedicated NGINX config
+ynh_add_nginx_config
+
+#=================================================
+# SPECIFIC SETUP
+#=================================================
+# BUILD TURTLE
+#=================================================
+ynh_script_progression --message="Building turtl... (this will take some time and resources!)" --weight=20
+
+pushd $final_path
+    ynh_use_nodejs
+    ynh_exec_as $app env $ynh_node_load_PATH npm install --unsafe-perm 2>/dev/null
+popd
+
+#=================================================
+# CREATE DATA DIRECTORY
+#=================================================
+ynh_script_progression --message="Creating a data directory..." --weight=2
+
+datadir=/home/yunohost.app/$app
+ynh_app_setting_set --app=$app --key=datadir --value=$datadir
+
+mkdir -p $datadir
+
+chmod 750 "$datadir"
+chmod -R o-rwx "$datadir"
+chown -R $app:www-data "$datadir"
+
+#=================================================
+# ADD A CONFIGURATION
+#=================================================
+ynh_script_progression --message="Adding a configuration file..." --weight=1
+
+ynh_add_config --template="../conf/config.yaml.default" --destination="$final_path/config/config.yaml"
+
+chmod 400 "$final_path/config/config.yaml"
+chown $app:$app "$final_path/config/config.yaml"
+
+#=================================================
+# SETUP SYSTEMD
+#=================================================
+ynh_script_progression --message="Configuring a systemd service..." --weight=2
+
+# Create a dedicated systemd config
+ynh_add_systemd_config
+
+#=================================================
+# GENERIC FINALIZATION
+#=================================================
+# INTEGRATE SERVICE IN YUNOHOST
+#=================================================
+ynh_script_progression --message="Integrating service in YunoHost..." --weight=1
+
+yunohost service add $app --description="Share notes, bookmarks, and documents"
+
+#=================================================
+# START SYSTEMD SERVICE
+#=================================================
+ynh_script_progression --message="Starting a systemd service..." --weight=5
+
+# Start a systemd service
+ynh_systemd_action --service_name=$app --action="start" --log_path=systemd --line_match="Listening for turtls on IP"
+
+#=================================================
+# SETUP SSOWAT
+#=================================================
+ynh_script_progression --message="Configuring permissions..." --weight=1
+
+# Make app public if necessary
+if [ $is_public -eq 1 ]
 then
-    gpg --list-keys 7638D0442B90D010 > /dev/null 2>&1
-    if [ $? != 0 ]
-    then
-        gpg --keyserver pgpkeys.mit.edu --recv-key 7638D0442B90D010
-    fi
-    gpg --list-keys 8B48AD6246925553 > /dev/null 2>&1
-    if [ $? != 0 ]
-    then
-        gpg --keyserver pgpkeys.mit.edu --recv-key 8B48AD6246925553
-    fi
-    if [ $(apt-key finger | grep "7638 D044 2B90 D010" -c) == 0 ]
-    then
-        gpg -a --export 7638D0442B90D010 | apt-key add -
-    fi
-    if [ $(apt-key finger | grep "8B48 AD62 4692 5553" -c) == 0 ]
-    then
-        gpg -a --export 8B48AD6246925553 | apt-key add -
-    fi
+	# Everyone can access the app.
+	# The "main" permission is automatically created before the install script.
+	ynh_permission_update --permission="main" --add="visitors"
 fi
 
-if [ $archi == "armv7l" ]
-then
-    # Install RethinkDB
-    dpkg -i ../conf/rethinkdb_2.3.6_armhf.deb
-else
-    # Activate RethinkDB sources.list
-    release=$(lsb_release -cs)
-    echo "deb http://download.rethinkdb.com/apt $release main" | tee /etc/apt/sources.list.d/rethinkdb.list
-    wget -qO- https://download.rethinkdb.com/apt/pubkey.gpg | apt-key add -
-    ynh_package_update
-fi
+#=================================================
+# RELOAD NGINX
+#=================================================
+ynh_script_progression --message="Reloading NGINX web server..." --weight=1
 
-# Install dependencies
-ynh_package_update
-ynh_install_app_dependencies wget git build-essential rethinkdb libuv1-dev python-pip
-
-
-# Install Clozure Common Lisp
-cd /opt
-if [ $archi == "armv7l" ]
-then
-    wget -q ftp://ftp.clozure.com/pub/release/1.11/ccl-1.11-linuxarm.tar.gz
-    tar xf ccl-1.11-linuxarm.tar.gz
-else
-    wget -q ftp://ftp.clozure.com/pub/release/1.11/ccl-1.11-linuxx86.tar.gz
-    tar xf ccl-1.11-linuxx86.tar.gz
-fi
-
-cd ccl
-if [ $(grep -c "flags.* lm .*" /proc/cpuinfo) -eq 0 ]
-then
-    cp scripts/ccl /usr/bin/ccl
-else
-    cp scripts/ccl64 /usr/bin/ccl
-fi
-sed -e "s@CCL_DEFAULT_DIRECTORY=/usr/local/src/ccl@CCL_DEFAULT_DIRECTORY=/opt/ccl@" -i /usr/bin/ccl
-
-# Install QuickLisp
-cd $pwd
-cp -a ../conf/ccl-init.lisp      $wwwhome/.ccl-init.lisp
-cp -a ../conf/quicklisp.lisp     /tmp/quicklisp.lisp
-cp -a ../conf/quicklisp.lisp.asc /tmp/quicklisp.lisp.asc
-
-mkdir $wwwhome/quicklisp $wwwhome/.cache/
-chown www-data: $wwwhome/quicklisp $wwwhome/.cache/ $wwwhome/.ccl-init.lisp
-
-gpg --keyserver pgpkeys.mit.edu --recv-key 307965AB028B5FF7
-gpg --verify /tmp/quicklisp.lisp.asc /tmp/quicklisp.lisp
-
-su -c 'echo -e "(quicklisp-quickstart:install)\n(quit)" | ccl --load /tmp/quicklisp.lisp' -s /bin/bash www-data
-
-echo "(pushnew \"./\" asdf :*central-registry* :test #'equal)" >> $wwwhome/.ccl-init.lisp
-
-rm -f /tmp/quicklisp /tmp/quicklisp.lisp.asc
-
-# Configure RethinkDB
-echo "http-port=8091" > /etc/rethinkdb/instances.d/turtl.conf
-service rethinkdb restart
-
-# Install RethinkDB tools (needed for backup)
-pip install rethinkdb
-
-# Install Turtl
-cd $wwwhome
-mkdir turtl/data -p
-cd turtl
-git clone https://github.com/turtl/api.git
+ynh_systemd_action --service_name=nginx --action=reload
 
 #=================================================
-# CONFIGURE TURTL
+# END OF SCRIPT
 #=================================================
-cd api
 
-# Copions le modèle de fichier de configuration
-cp config/config.default.lisp config/config.lisp
-
-# Modifie la configuration de turtl
-sed -e "s@\*server-port\* 8181@*server-port* $port@" \
-    -e "s@\*server-bind\* nil@*server-bind* \"127.0.0.1\"@" \
-    -e "s@\*production-error-handling\* nil@*production-error-handling* t@" \
-    -e "s@\*site-url\* \"http://turtl.dev:8181\"@*site-url* \"https://$domain\"@" \
-    -e "s@\*smtp-host\* nil@*smtp-host* \"localhost\"@" \
-    -e "s@\*display-errors\* t@*display-errors* nil@" \
-    -e "s@\*local-upload\* nil@*local-upload* \"$wwwhome/turtl/data\"@" \
-    -e "s@\*local-upload-url\* nil@*local-upload-url* \"https://$domain\"@" \
-    -i config/config.lisp
-
-if [ $path != '/' ]
-then
-    sed -e "s@\*api-path\* \"\"@\*api-path\* \"$path\"@" -i config/config.lisp
-fi
-
-#=================================================
-# LOG HANDLING
-#=================================================
-cd $pwd
-cp "../conf/rsyslogd.conf" "/etc/rsyslog.d/$app.conf"
-service rsyslog restart
-mkdir /var/log/turtl/ -p
-cp "../conf/logrotate.conf" "/etc/logrotate.d/$app"
-
-#=================================================
-# ENABLE SERVICE IN ADMIN PANEL
-#=================================================
-# Add service to Yunohost monitoring
-cp "../conf/turtl.service" "/etc/systemd/system/$app.service"
-systemctl daemon-reload
-yunohost service add turtl --log "/var/log/turtl/$app.log"
-yunohost service start turtl
-
-#=================================================
-# NGINX
-#=================================================
-# Copy Nginx conf
-cp ../conf/nginx.conf /etc/nginx/conf.d/$domain.d/$app.conf
-
-# Change variables in Nginx configuration
-if [ $is_public -eq 1 ];
-then
-    ynh_app_setting_set "$app" unprotected_uris "$path"
-fi
-sed -i "s@__PATH__@$path@g" /etc/nginx/conf.d/$domain.d/$app.conf
-sed -i "s@__PORT__@$port@g" /etc/nginx/conf.d/$domain.d/$app.conf
-
-# Reload Nginx
-service nginx reload
+ynh_script_progression --message="Installation of $app completed" --last

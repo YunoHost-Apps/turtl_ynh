@@ -1,7 +1,0 @@
-Package: libuv1-dev
-Pin: release a=jessie-backports
-Pin-Priority: 900
-
-Package: rethinkdb
-Pin: origin download.rethinkdb.com
-Pin-Priority: 900
