@@ -5,7 +5,7 @@ It shall NOT be edited by hand.
 
 # Turtl for YunoHost
 
-[![Integration level](https://dash.yunohost.org/integration/turtl.svg)](https://dash.yunohost.org/appci/app/turtl) ![](https://ci-apps.yunohost.org/ci/badges/turtl.status.svg) ![](https://ci-apps.yunohost.org/ci/badges/turtl.maintain.svg)  
+[![Integration level](https://dash.yunohost.org/integration/turtl.svg)](https://dash.yunohost.org/appci/app/turtl) ![Working status](https://ci-apps.yunohost.org/ci/badges/turtl.status.svg) ![Maintenance status](https://ci-apps.yunohost.org/ci/badges/turtl.maintain.svg)
 [![Install Turtl with YunoHost](https://install-app.yunohost.org/install-with-yunohost.svg)](https://install-app.yunohost.org/?app=turtl)
 
 *[Lire ce readme en français.](./README_fr.md)*
@@ -37,31 +37,30 @@ Turtl is a free online service that allows you to create, synchronize and find y
 - An open-source server allows you to host your own Turtl data
 
 
-**Shipped version:** 1.0~ynh1
-
-
+**Shipped version:** 1.0~ynh2
 
 ## Screenshots
 
-![](./doc/screenshots/screenshot.png)
+![Screenshot of Turtl](./doc/screenshots/screenshot.png)
 
 ## Documentation and resources
 
-* Official app website: https://turtlapp.com
-* Official admin documentation: https://turtlapp.com/docs/
-* Upstream app code repository: https://github.com/turtl/server
-* YunoHost documentation for this app: https://yunohost.org/app_turtl
-* Report a bug: https://github.com/YunoHost-Apps/turtl_ynh/issues
+* Official app website: <https://turtlapp.com>
+* Official admin documentation: <https://turtlapp.com/docs/>
+* Upstream app code repository: <https://github.com/turtl/server>
+* YunoHost documentation for this app: <https://yunohost.org/app_turtl>
+* Report a bug: <https://github.com/YunoHost-Apps/turtl_ynh/issues>
 
 ## Developer info
 
 Please send your pull request to the [testing branch](https://github.com/YunoHost-Apps/turtl_ynh/tree/testing).
 
 To try the testing branch, please proceed like that.
-```
+
+``` bash
 sudo yunohost app install https://github.com/YunoHost-Apps/turtl_ynh/tree/testing --debug
 or
 sudo yunohost app upgrade turtl -u https://github.com/YunoHost-Apps/turtl_ynh/tree/testing --debug
 ```
 
-**More info regarding app packaging:** https://yunohost.org/packaging_apps
+**More info regarding app packaging:** <https://yunohost.org/packaging_apps>
