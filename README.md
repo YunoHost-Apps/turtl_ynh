@@ -6,6 +6,7 @@ It shall NOT be edited by hand.
 # Turtl for YunoHost
 
 [![Integration level](https://dash.yunohost.org/integration/turtl.svg)](https://dash.yunohost.org/appci/app/turtl) ![Working status](https://ci-apps.yunohost.org/ci/badges/turtl.status.svg) ![Maintenance status](https://ci-apps.yunohost.org/ci/badges/turtl.maintain.svg)
+
 [![Install Turtl with YunoHost](https://install-app.yunohost.org/install-with-yunohost.svg)](https://install-app.yunohost.org/?app=turtl)
 
 *[Lire ce readme en français.](./README_fr.md)*
@@ -43,12 +44,16 @@ Turtl is a free online service that allows you to create, synchronize and find y
 
 ![Screenshot of Turtl](./doc/screenshots/screenshot.png)
 
+## :red_circle: Antifeatures
+
+- **Package not maintained**: This YunoHost package is not maintained and needs adoption.
+
 ## Documentation and resources
 
 * Official app website: <https://turtlapp.com>
 * Official admin documentation: <https://turtlapp.com/docs/>
 * Upstream app code repository: <https://github.com/turtl/server>
-* YunoHost documentation for this app: <https://yunohost.org/app_turtl>
+* YunoHost Store: <https://apps.yunohost.org/app/turtl>
 * Report a bug: <https://github.com/YunoHost-Apps/turtl_ynh/issues>
 
 ## Developer info
