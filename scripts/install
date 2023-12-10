@@ -57,7 +57,7 @@ yunohost service add $app --description="Share notes, bookmarks, and documents"
 #=================================================
 # BUILD TURTLE
 #=================================================
-ynh_script_progression --message="Building turtl... (this will take some time and resources!)" --weight=20
+ynh_script_progression --message="Building $app..." --weight=20
 
 pushd $install_dir
     ynh_use_nodejs
