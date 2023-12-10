@@ -7,9 +7,9 @@ After=network.target postgresql.service
 Type=simple
 User=__APP__
 Group=__APP__
-WorkingDirectory=__FINALPATH__/
+WorkingDirectory=__INSTALL_DIR__/
 Environment="PATH=__PATH__"
-ExecStart=__YNH_NODE__ __FINALPATH__/server.js
+ExecStart=__YNH_NODE__ __INSTALL_DIR__/server.js
 StandardOutput=syslog
 StandardError=syslog
 SyslogIdentifier=__APP__
