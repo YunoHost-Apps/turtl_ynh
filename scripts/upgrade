@@ -42,7 +42,7 @@ chown -R $app:www-data "$install_dir"
 #=================================================
 # NGINX CONFIGURATION
 #=================================================
-ynh_script_progression --message="Upgrading NGINX web server configuration..." --weight=2
+ynh_script_progression --message="Upgrading system configurations related to $app..." --weight=1
 
 # Create a dedicated NGINX config
 ynh_add_nginx_config
@@ -52,7 +52,7 @@ ynh_exec_warn_less ynh_install_nodejs --nodejs_version=$nodejs_version
 # Create a dedicated systemd config
 ynh_add_systemd_config
 
-yunohost service add $app --description="Share notes, bookmarks, and documents"
+yunohost service add $app --description="Share notes, bookmarks, and documents" --log="/var/log/$app/$app.log"
 
 #=================================================
 # START SYSTEMD SERVICE
