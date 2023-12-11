@@ -38,7 +38,7 @@ Turtl is a free online service that allows you to create, synchronize and find y
 - An open-source server allows you to host your own Turtl data
 
 
-**Shipped version:** 1.0~ynh2
+**Shipped version:** 1.0~ynh3
 
 ## Screenshots
 
