@@ -1,0 +1,59 @@
+packaging_format = 2
+
+id = "turtl"
+name = "Turtl"
+description.en = "Share notes, bookmarks, and documents for sensitive projects"
+description.fr = "Partagez des notes, des marque-pages et autre documents pour des projets sensibles"
+
+version = "1.0~ynh3"
+
+maintainers = []
+
+[upstream]
+license = "MIT"
+website = "https://turtlapp.com"
+admindoc = "https://turtlapp.com/docs/"
+code = "https://github.com/turtl/server"
+
+[integration]
+yunohost = ">= 11.2"
+architectures = "all"
+multi_instance = false
+
+ldap = false
+
+sso = false
+
+disk = "50M"
+ram.build = "50M"
+ram.runtime = "50M"
+
+[install]
+    [install.domain]
+    type = "domain"
+
+    [install.init_main_permission]
+    type = "group"
+    default = "visitors"
+
+[resources]
+        [resources.sources.main]
+        url = "https://codeload.github.com/turtl/server/tar.gz/0e59ee0a47fc5937600999d14ceb1aca6392aec8"
+        sha256 = "be1482756fed2fc80dd8592049c2282727439c883eae732844a6e30856eb55da"
+
+    [resources.system_user]
+
+    [resources.install_dir]
+
+    [resources.data_dir]
+
+    [resources.permissions]
+    main.url = "/"
+
+    [resources.apt]
+    packages = "postgresql, postgresql-contrib"
+
+    [resources.database]
+    type = "postgresql"
+    
+    [resources.ports]
