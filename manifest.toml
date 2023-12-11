@@ -5,9 +5,9 @@ name = "Turtl"
 description.en = "Share notes, bookmarks, and documents for sensitive projects"
 description.fr = "Partagez des notes, des marque-pages et autre documents pour des projets sensibles"
 
-version = "1.0~ynh2"
+version = "1.0~ynh3"
 
-maintainers = ["Luc Didry"]
+maintainers = []
 
 [upstream]
 license = "MIT"
