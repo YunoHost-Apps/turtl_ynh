@@ -5,7 +5,7 @@ name = "Turtl"
 description.en = "Share notes, bookmarks, and documents for sensitive projects"
 description.fr = "Partagez des notes, des marque-pages et autre documents pour des projets sensibles"
 
-version = "1.0~ynh3"
+version = "2021.03.05~ynh1"
 
 maintainers = []
 
@@ -38,7 +38,7 @@ ram.runtime = "50M"
 
 [resources]
         [resources.sources.main]
-        url = "https://codeload.github.com/turtl/server/tar.gz/0e59ee0a47fc5937600999d14ceb1aca6392aec8"
+        url = "https://github.com/turtl/server/archive/0e59ee0a47fc5937600999d14ceb1aca6392aec8.tar.gz"
         sha256 = "be1482756fed2fc80dd8592049c2282727439c883eae732844a6e30856eb55da"
         autoupdate.strategy = "latest_github_commit"
 
