@@ -46,7 +46,7 @@ Turtl is a free online service that allows you to create, synchronize and find y
 
 ## :red_circle: Anti-fonctionnalités
 
-- **Paquet non maintenu**: Ce package YunoHost n'est plus maintenu et doit être adopté.
+- **Package non maintenu **: Ce package YunoHost n'est pas activement maintenu et a besoin d'être adopté. Cela veut dire que la maintenance minimale est réalisée par des bénévoles qui n'utilisent pas l'application, il faut donc s'attendre à ce que l'app perde en fiabilité avec le temps. Vous pouvez [apprendre comment packager](https://yunohost.org/packaging_apps_intro) si vous voulez l'adopter.
 
 ## Documentations et ressources
 
