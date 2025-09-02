@@ -20,7 +20,7 @@ hash=$(ynh_string_random --length=128)
 #=================================================
 ynh_script_progression --message="Installing dependencies..." --weight=20
 
-ynh_exec_warn_less ynh_install_nodejs --nodejs_version=$nodejs_version
+#REMOVEME? ynh_exec_warn_less #REMOVEME? ynh_install_nodejs --#REMOVEME? nodejs_version=$nodejs_version
 
 #=================================================
 # DOWNLOAD, CHECK AND UNPACK SOURCE
@@ -60,7 +60,7 @@ yunohost service add $app --description="Share notes, bookmarks, and documents" 
 ynh_script_progression --message="Building $app..." --weight=20
 
 pushd $install_dir
-    ynh_use_nodejs
+    #REMOVEME? ynh_use_nodejs
     ynh_exec_warn_less ynh_exec_as $app env $ynh_node_load_PATH $ynh_npm install --unsafe-perm
 popd
 

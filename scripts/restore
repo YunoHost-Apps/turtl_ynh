@@ -36,7 +36,7 @@ chown -R $app:www-data "$data_dir"
 #=================================================
 ynh_script_progression --message="Reinstalling dependencies..." --weight=20
 
-ynh_exec_warn_less ynh_install_nodejs --nodejs_version=$nodejs_version
+#REMOVEME? ynh_exec_warn_less #REMOVEME? ynh_install_nodejs --#REMOVEME? nodejs_version=$nodejs_version
 
 #=================================================
 # RESTORE THE POSTGRESQL DATABASE

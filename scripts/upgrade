@@ -47,7 +47,7 @@ ynh_script_progression --message="Upgrading system configurations related to $ap
 # Create a dedicated NGINX config
 ynh_add_nginx_config
 
-ynh_exec_warn_less ynh_install_nodejs --nodejs_version=$nodejs_version
+#REMOVEME? ynh_exec_warn_less #REMOVEME? ynh_install_nodejs --#REMOVEME? nodejs_version=$nodejs_version
 
 # Create a dedicated systemd config
 ynh_add_systemd_config
