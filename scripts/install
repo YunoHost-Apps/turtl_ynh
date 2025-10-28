@@ -43,7 +43,7 @@ yunohost service add $app --description="Share notes, bookmarks, and documents" 
 ynh_script_progression "Building $app..."
 
 pushd $install_dir
-    ynh_hide_warnings ynh_exec_as_app node_load_PATH npm install --unsafe-perm
+    ynh_hide_warnings ynh_exec_as_app npm install --unsafe-perm
 popd
 
 #=================================================
