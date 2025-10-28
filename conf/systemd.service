@@ -9,7 +9,7 @@ User=__APP__
 Group=__APP__
 WorkingDirectory=__INSTALL_DIR__/
 Environment="PATH=__PATH__"
-ExecStart=__YNH_NODE__ __INSTALL_DIR__/server.js
+ExecStart=__NODEJS_DIR__/node __INSTALL_DIR__/server.js
 StandardOutput=syslog
 StandardError=syslog
 SyslogIdentifier=__APP__
